@@ -33,9 +33,9 @@
 import SwiftUI
 import Combine
 
-struct DailyExpensesView: View {
+struct ExpensesView: View {
   @State private var isAddPresented = false
-  @ObservedObject var dataSource: DailyReportsDataSource
+  @ObservedObject var dataSource: ReportsDataSource
 
   var body: some View {
     VStack {
@@ -65,10 +65,10 @@ struct DailyExpensesView: View {
   }
 }
 
-struct DailyExpensesView_Previews: PreviewProvider {
+struct ExpensesView_Previews: PreviewProvider {
   static var previews: some View {
-    let reportsDataSource = DailyReportsDataSource(
-      viewContext: PersistenceController.preview.container.viewContext)
-    DailyExpensesView(dataSource: reportsDataSource)
+    let reportsDataSource = ReportsDataSource(viewContext: PersistenceController.preview.container.viewContext,
+                                              reportRange: .daily)
+    ExpensesView(dataSource: reportsDataSource)
   }
 }
