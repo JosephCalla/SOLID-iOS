@@ -30,54 +30,71 @@
 /// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 /// THE SOFTWARE.
 
-import SwiftUI
+import CoreData
+import Combine
 
-struct ExpenseItemView: View {
-  let expenseItem: ExpenseModelProtocol
+class ReportsDataSource: ReportReader, SaveEntryProtocol {
+
+  var viewContext: NSManagedObjectContext
+
+  let reportRange: ReportRange
   
-  static let dateFormatter: DateFormatter = {
-    var dateFormatter = DateFormatter()
-    dateFormatter.dateStyle = .medium
-    dateFormatter.timeStyle = .none
-    return dateFormatter
-  }()
+  init(viewContext: NSManagedObjectContext = PersistenceController.shared.container.viewContext, reportRange: ReportRange) {
+    self.viewContext = viewContext
+    self.reportRange = reportRange
+    super.init()
+    prepare()
+  }
+
+  override func prepare() {
+    
+    currentEntries = getEntries()
+  }
   
-  static let timeFormatter: DateFormatter = {
-    var dateFormatter = DateFormatter()
-    dateFormatter.dateStyle = .none
-    dateFormatter.timeStyle = .medium
-    return dateFormatter
-  }()
-  
-  var body: some View {
-    VStack(alignment: .leading) {
-      HStack {
-        Text(expenseItem.title ?? "")
-        Spacer()
-        Text(String(format: "%.2f", expenseItem.price))
-      }
-      Text(expenseItem.comment ?? "")
-        .font(.caption)
-      HStack {
-        Text("\(expenseItem.date ?? Date(), formatter: Self.dateFormatter)")
-        Spacer()
-        Text("\(expenseItem.date ?? Date(), formatter: Self.timeFormatter)")
-      }
+  private func getEntries() -> [ExpenseModelProtocol] {
+    let fetchRequest: NSFetchRequest<ExpenseModel> =
+      ExpenseModel.fetchRequest()
+    fetchRequest.sortDescriptors = [
+      NSSortDescriptor(
+        keyPath: \ExpenseModel.date,
+        ascending: false)
+    ]
+    let (startDate, endDate) = reportRange.timeRange()
+    fetchRequest.predicate = NSPredicate(
+      format: "%@ <= date AND date <= %@",
+      startDate as CVarArg,
+      endDate as CVarArg)
+    do {
+      let results = try viewContext.fetch(fetchRequest)
+      return results
+    } catch let error {
+      print(error)
+      return []
     }
+
+  }
+
+  func saveEntry(title: String, price: Double, date: Date, comment: String) -> Bool {
+    let newItem = ExpenseModel(context: viewContext)
+    newItem.title = title
+    newItem.date = date
+    newItem.comment = comment
+    newItem.price = price
+    newItem.id = UUID()
+
+    if let index = currentEntries.firstIndex(where: { $0.date ?? Date() < date }) {
+      currentEntries.insert(newItem, at: index)
+    } else {
+      currentEntries.append(newItem)
+    }
+
+    try? viewContext.save()
+    
+    return true
+  }
+
+  func delete(entry: ExpenseModel) {
+    viewContext.delete(entry)
+    try? viewContext.save()
   }
 }
-
-struct ExpenseItemView_Previews: PreviewProvider {
-  struct PreviewExpenseModel: ExpenseModelProtocol {
-    var title: String? = "Preview Item"
-    var price: Double = 123.45
-    var comment: String? = "This is a preview item"
-    var date: Date? = Date()
-    var id: UUID? = UUID()
-  }
-
-  static var previews: some View {
-    ExpenseItemView(expenseItem: PreviewExpenseModel())
-  }
-}
-

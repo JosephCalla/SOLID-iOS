@@ -34,13 +34,14 @@ import SwiftUI
 
 struct AddExpenseView: View {
   @Environment(\.presentationMode) var presentation
-  var saveClosure: (String, Double, Date, String) -> Void
+  var saveEntryHandler: SaveEntryProtocol
 
   @State var title: String = ""
   @State var time = Date()
   @State var comment: String = ""
   @State var price: String = ""
   @State var saveDisabled = true
+  
   var body: some View {
     NavigationView {
       VStack(alignment: .leading) {
@@ -82,7 +83,16 @@ struct AddExpenseView: View {
       return
     }
 
-    saveClosure(title, numericPrice, time, comment)
+    guard saveEntryHandler.saveEntry(
+      title: title,
+      price: numericPrice,
+      date: time,
+      comment: comment)
+    else {
+      print("Invalid entry.")
+      return
+    }
+
     cancelEntry()
   }
 
@@ -100,8 +110,12 @@ struct AddExpenseView: View {
 }
 
 struct AddExpenseView_Previews: PreviewProvider {
-  static var previews: some View {
-    AddExpenseView { _, _, _, _ in
+  class PreviewSaveHandler: SaveEntryProtocol {
+    func saveEntry(title: String, price: Double, date: Date, comment: String) -> Bool {
+      return false
     }
+  }
+  static var previews: some View {
+    AddExpenseView(saveEntryHandler: PreviewSaveHandler())
   }
 }
