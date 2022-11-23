@@ -83,11 +83,16 @@ struct AddExpenseView: View {
       return
     }
 
-    saveEntryHandler.saveEntry(
+    guard saveEntryHandler.saveEntry(
       title: title,
       price: numericPrice,
       date: time,
       comment: comment)
+    else {
+      print("Invalid entry.")
+      return
+    }
+
     cancelEntry()
   }
 
@@ -106,7 +111,8 @@ struct AddExpenseView: View {
 
 struct AddExpenseView_Previews: PreviewProvider {
   class PreviewSaveHandler: SaveEntryProtocol {
-    func saveEntry(title: String, price: Double, date: Date, comment: String) {
+    func saveEntry(title: String, price: Double, date: Date, comment: String) -> Bool {
+      return false
     }
   }
   static var previews: some View {
