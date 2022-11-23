@@ -46,6 +46,7 @@ struct ExpensesView: View {
       }
       TotalView(totalExpense: dataSource.currentEntries.reduce(0) { $0 + $1.price })
     }
+    
     .toolbar {
       Button(action: {
         isAddPresented.toggle()
@@ -53,12 +54,14 @@ struct ExpensesView: View {
         Image(systemName: "plus")
       })
     }
-    .fullScreenCover(
-      isPresented: $isAddPresented) {
-      AddExpenseView { title, price, time, comment in
-        dataSource.saveEntry(title: title, price: price, date: time, comment: comment)
+    
+    .fullScreenCover(isPresented: $isAddPresented) { () -> AddExpenseView? in
+      guard let saveHandler = dataSource as? SaveEntryProtocol else {
+        return nil
       }
+      return AddExpenseView(saveEntryHandler: saveHandler)
     }
+    
     .onAppear {
       dataSource.prepare()
     }
@@ -94,7 +97,7 @@ class PreviewReportsDataSource: ReportReader {
   override func prepare() {
   }
   
-  override func saveEntry(
+  func saveEntry(
     title: String,
     price: Double,
     date: Date,

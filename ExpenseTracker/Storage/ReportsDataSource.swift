@@ -33,7 +33,7 @@
 import CoreData
 import Combine
 
-class ReportsDataSource: ReportReader {
+class ReportsDataSource: ReportReader, SaveEntryProtocol {
 
   var viewContext: NSManagedObjectContext
 
@@ -74,7 +74,7 @@ class ReportsDataSource: ReportReader {
 
   }
 
-  override func saveEntry(title: String, price: Double, date: Date, comment: String) {
+  func saveEntry(title: String, price: Double, date: Date, comment: String) {
     let newItem = ExpenseModel(context: viewContext)
     newItem.title = title
     newItem.date = date
